@@ -11,9 +11,9 @@
 int main(void)
 {
     // read the data
-    int len = 360;
+    int len = 1296;
     gclPoint *points = new gclPoint[len];
-    ifstream file("../../../GCL/testdata/elipse3Dpoint.txt");
+    ifstream file("../../../GCL/testdata/sphereFit.txt");
     for (int i = 0; i < len; i++) {
         file >> points[i].x >> points[i].y  >> points[i].z;
     }
@@ -30,12 +30,17 @@ int main(void)
 //    }
     
     // test for elipse fitting
-    gclElipse elipse;
-    if (geom_fit_elipse(elipse, points, len)) {
-        printf("a= %f b= %f\np.x = %f p.y = %f p.z = %f\nnv.a = %f nv.b = %f nv.c = %f\nmv.a = %f mv.b = %f mv.c = %f\n", elipse.a, elipse.b, elipse.center.x, elipse.center.y, elipse.center.z, elipse.norVector.a, elipse.norVector.b, elipse.norVector.c, elipse.mainVector.a, elipse.mainVector.b, elipse.mainVector.c);
+//    gclElipse elipse;
+//    if (geom_fit_elipse(elipse, points, len)) {
+//        printf("a= %f b= %f\np.x = %f p.y = %f p.z = %f\nnv.a = %f nv.b = %f nv.c = %f\nmv.a = %f mv.b = %f mv.c = %f\n", elipse.a, elipse.b, elipse.center.x, elipse.center.y, elipse.center.z, elipse.norVector.a, elipse.norVector.b, elipse.norVector.c, elipse.mainVector.a, elipse.mainVector.b, elipse.mainVector.c);
+//    }
+    
+    // test for sphere fitting
+    // true value:center =[-10, 5, 20],R = 30;
+    gclSphere sphere;
+    if (geom_fit_sphere(sphere, points, len)) {
+        printf("%f %f %f\n%f\n", sphere.center.x, sphere.center.y, sphere.center.z, sphere.r);
     }
-    
-    
     
     
     delete []points;

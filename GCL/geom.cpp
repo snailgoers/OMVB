@@ -130,6 +130,10 @@ double geom_dist_point_plane(gclPlane plane, gclPoint point)
     gclPoint pt = plane.point;
     return fabs(v.a * (point.x - pt.x) + v.b * (point.y - pt.y) + v.c * (point.z - pt.z)) / sqrt(v.a * v.a + v.b * v.b + v.c * v.c);
 }
+double geom_dist_point_sphere(gclSphere sphere, gclPoint point)
+{
+    return geom_dist_point_point(sphere.center, point) - sphere.r;
+}
 // 第一象限中点到标准椭圆距离
 double DistancePointEllipseSpecial(const double e[2], const double y[2], double x[2])
 {
@@ -718,6 +722,54 @@ bool geom_fit_elipse(gclElipse &elipse, gclPoint *points, int len)
     delete []wa2;
     delete []wa3;
     delete []wa4;
+    
+    return true;
+}
+
+bool geom_fit_sphere(gclSphere &sphere, gclPoint *points, int len)
+{
+    double sxx = 0, sxy = 0, sxz = 0, sx = 0, syy = 0, syz = 0, sy = 0, szz = 0, sz = 0;
+    double sxxx = 0, sxyy = 0, sxzz = 0, sxxy = 0, syyy = 0, syzz = 0, sxxz = 0, syyz = 0, szzz = 0;
+    for (int i = 0; i < len; i++) {
+        sxx += points[i].x * points[i].x;
+        sxy += points[i].x * points[i].y;
+        sxz += points[i].x * points[i].z;
+        sx += points[i].x;
+        syy += points[i].y * points[i].y;
+        syz += points[i].y * points[i].z;
+        sy += points[i].y;
+        szz += points[i].z * points[i].z;
+        sz += points[i].z;
+        sxxx += points[i].x * points[i].x * points[i].x;
+        sxyy += points[i].x * points[i].y * points[i].y;
+        sxzz += points[i].x * points[i].z * points[i].z;
+        sxxy += points[i].x * points[i].x * points[i].y;
+        syyy += points[i].y * points[i].y * points[i].y;
+        syzz += points[i].y * points[i].z * points[i].z;
+        sxxz += points[i].x * points[i].x * points[i].z;
+        syyz += points[i].y * points[i].y * points[i].z;
+        szzz += points[i].z * points[i].z * points[i].z;
+    }
+    
+    double AA[] = {sxx, sxy, sxz, -sx, sxy, syy, syz, -sy, sxz, syz, szz, -sz, -sx, -sy, -sz, double(len)};
+    double invAA[16];
+    if (!GetInverseMatrix(AA, invAA, 4)) {
+        return false;
+    }
+    double x[] = {sxxx + sxyy + sxzz, sxxy + syyy + syzz, sxxz + syyz + szzz, -sxx - syy - szz};
+    double a[4];
+    for (int i = 0; i < 4; i++) {
+        double sumtemp = 0.0;
+        for (int j = 0; j < 4; j++) {
+            sumtemp += invAA[i * 4 + j] * x[j];
+        }
+        a[i] = sumtemp;
+    }
+    
+    sphere.center.x = a[0] / 2;
+    sphere.center.y = a[1] / 2;
+    sphere.center.z = a[2] / 2;
+    sphere.r = sqrt(a[0] * a[0] / 4 + a[1] * a[1] / 4 + a[2] * a[2] / 4 - a[3]);
     
     return true;
 }

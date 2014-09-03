@@ -133,6 +133,14 @@ struct gclPlane{
     gclVector norVector;
 };
 
+struct gclSphere{
+    gclPoint center;
+    double r;
+    gclSphere()
+    {
+        center.x = 0; center.y = 0; center.z = 0; r = 0;
+    }
+};
 struct minpackData{
     const gclPoint *points;
     int len;

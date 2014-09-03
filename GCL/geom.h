@@ -26,12 +26,14 @@ double geom_dist_point_point(gclPoint pt1, gclPoint pt2);
 double geom_dist_point_lseg(gclPoint pt, gclLseg lseg);
 double geom_dist_point_elipse(gclElipse elipse, gclPoint point);
 double geom_dist_point_plane(gclPlane plane, gclPoint point);
+double geom_dist_point_sphere(gclSphere sphere, gclPoint point);
 
 
 //geom fitting
 bool geom_fit_lseg_3D(gclLseg &lseg, gclPoint *points, int len);
 bool geom_fit_elipse(gclElipse &elipse, gclPoint *points, int len);
 bool geom_fit_plane(gclPlane &plane, gclPoint *points, int len);
+bool geom_fit_sphere(gclSphere &sphere, gclPoint *points, int len);
 
 
 #endif /* defined(__GCL__geom__) */
