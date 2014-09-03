@@ -31,7 +31,7 @@ double geom_dist_point_plane(gclPlane plane, gclPoint point);
 //geom fitting
 bool geom_fit_lseg_3D(gclLseg &lseg, gclPoint *points, int len);
 bool geom_fit_elipse(gclElipse &elipse, gclPoint *points, int len);
-bool geom_fit_plane(gclPlane plane, gclPoint *points, int len);
+bool geom_fit_plane(gclPlane &plane, gclPoint *points, int len);
 
 
 #endif /* defined(__GCL__geom__) */

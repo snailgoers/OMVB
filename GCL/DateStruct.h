@@ -42,6 +42,10 @@ struct gclPoint
         y = matrix[3] * x + matrix[4] * y + matrix[5] * z;
         z = matrix[6] * x + matrix[7] * y + matrix[8] * z;
     }
+    void operator = (gclPoint pt)
+    {
+        x = pt.x; y = pt.y; z = pt.z;
+    }
 };
 struct gclLseg{
     gclPoint start, end;

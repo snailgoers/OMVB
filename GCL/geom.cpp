@@ -35,33 +35,35 @@ bool GetInverseMatrix(double *A, double *B, const int len)
         t[i] = new double[len];
     }
     for (int i = 0; i < len; i++) {
-        for (int j =0; j < len; j++) {
+        for (int j = 0; j < len; j++) {
             t[i][j] = A[i * len + j];
             // init B as the unit matrix
             B[i * len + j] = (i ==j) ? (double)1 : 0;
         }
     }
-    
+
+    int k;
+    double maxvalue, temp;
     for (int i = 0; i < len; i++) {
         //寻找主元
-        double maxValue = t[i][i];
-        int k = i;
+        maxvalue = t[i][i];
+        k = i;
         for (int j = i + 1; j < len; j++) {
-            if (fabs(t[i][j]) > fabs(maxValue)) {
-                maxValue = t[i][j];
+            if (fabs(t[j][i]) > fabs(maxvalue)) {
+                maxvalue = t[j][i];
                 k = j;
             }
         }
         // 如果主元所在行不是第i行，进行换行
         if (k != i) {
             for (int j = 0; j < len; j++) {
-                double temp = t[i][j];
+                temp = t[i][j];
                 t[i][j] = t[k][j];
                 t[k][j] = temp;
                 // B伴随交换
-                temp = B[i];
-                B[i] = B[k];
-                B[k] = temp;
+                temp = B[i * len + j];
+                B[i * len + j] = B[k * len + j];
+                B[k * len + j] = temp;
             }
         }
         // 判断主元是否为零，若是，则矩阵不满足满秩，不存在逆矩阵
@@ -69,18 +71,18 @@ bool GetInverseMatrix(double *A, double *B, const int len)
             return false;
         }
         // 消去A的第i列除去i行以外的各行原属
-
+        temp = t[i][i];
         for (int j = 0; j < len; j++) {
-            t[i][j] /= t[i][i];
-            B[i * len + j] /= t[i][i];
+            t[i][j] = t[i][j] / temp;
+            B[i * len + j] = B[i * len + j] / temp;
         }
         // 消元
         for (int j = 0; j < len; j++) {
             if (j != i) {
-                double temp = t[j][i];
-                for (int k = 0; k < len; k++) {
-                    t[j][k] -= t[i][k] * temp;
-                    B[j * len + k] -= B[i * len + k] * temp;
+                temp = t[j][i];
+                for (k = 0; k < len; k++) {
+                    t[j][k] = t[j][k] - t[i][k] * temp;
+                    B[j * len + k] = B[j * len + k] - B[i * len + k] * temp;
                 }
             }
         }
@@ -262,7 +264,7 @@ double geom_dist_point_elipseHoriranttol(gclElipse elipse, gclPoint point)
     double theta = acos(v1.vPointMult(elipse.mainVector) / elipse.mainVector.vLength());
     double cost = cos(theta);
     double sint = sin(theta);
-    gclPoint pt;
+    gclPoint pt = point;
     pt.x -= elipse.center.x;
     pt.y -= elipse.center.y;
     pt.z -= elipse.center.z;
@@ -305,6 +307,8 @@ double geom_dist_point_elipse(gclElipse elipse, gclPoint point)
     elipseV.b = elipse.b;
     elipseV.norVector = vdst;
     elipseV.mainVector = mvector;
+    elipseV.center = pcenter;
+    elipseV.mainVector.vNorm();
     
     double distVertical = geom_dist_point_elipseHoriranttol(elipseV, point);
     
@@ -333,7 +337,7 @@ bool geom_fit_plane_nonVertical(gclPlane &plane, gclPoint *points, int len)
     }
     double AA[] = {sxx, sxy, sx, sxy, syy, sy, sx, sy, double(len)};
     double invAA[9];
-    if (GetInverseMatrix(AA, invAA, 3)) {
+    if (!GetInverseMatrix(AA, invAA, 3)) {
         return false;
     }
     double x[] = {sxz, syz, sz};
@@ -369,7 +373,7 @@ int Minpack_CostFun_Plane(void *pspo, int m, int n, const __cminpack_real__ *x, 
     }
     return 0;
 }
-bool geom_fit_plane(gclPlane plane, gclPoint *points, int len)
+bool geom_fit_plane(gclPlane &plane, gclPoint *points, int len)
 {
     if (points == NULL || len < 3) {
         return  false;
@@ -413,7 +417,6 @@ bool geom_fit_plane(gclPlane plane, gclPoint *points, int len)
     gclVector v2(points[index0], points[index2]);
     plane.norVector = v1.vCrossMult(v2);
     plane.norVector.vNorm();
-    
     if (plane.norVector.c > EPS) {
         geom_fit_plane_nonVertical(plane, points, len);
         return true;
@@ -626,7 +629,7 @@ bool geom_fit_elipse(gclElipse &elipse, gclPoint *points, int len)
     double maxDis = -DBL_MAX;
     double minDis = DBL_MAX;
     for (int i = 0; i < len; i++) {
-        double dis = fabs(pt.x - points[i].x) + fabs(pt.y - points[i].y) + fabs(pt.z - points[i].z);
+        double dis = geom_dist_point_point(pt, points[i]);
         if (dis > maxDis) {
             maxDis = dis;
             pta.x = points[i].x;
@@ -643,6 +646,9 @@ bool geom_fit_elipse(gclElipse &elipse, gclPoint *points, int len)
     elipse.center = pt;
     elipse.norVector = plane.norVector;
     elipse.mainVector = mainVector;
+    
+    elipse.norVector.vNorm();
+    elipse.mainVector.vNorm();
     
     
     int m = len;
