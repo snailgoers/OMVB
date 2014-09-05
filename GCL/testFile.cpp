@@ -10,6 +10,14 @@
 
 int main(void)
 {
+    // test for opencv
+    Mat src = imread("../../../GCL/testdata/1.tif", 0);
+    imshow("src", src);
+    waitKey();
+    
+    
+    
+    
     // read the data
     int len = 1296;
     gclPoint *points = new gclPoint[len];

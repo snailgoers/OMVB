@@ -23,7 +23,10 @@ using namespace std;
 #define EPSFCN  1.0E-16
 #define MODE    1
 #define FACTOR  100.0
-#define EPS     1.0E-16
+#define EPSMIN     1.0E-16
+
+#define gclMin(a, b) ((a) < (b) ? (a) : (b))
+#define gclMax(a, b) ((a) > (b) ? (a) : (b))
 
 struct gclPoint
 {
@@ -139,6 +142,18 @@ struct gclSphere{
     gclSphere()
     {
         center.x = 0; center.y = 0; center.z = 0; r = 0;
+    }
+};
+struct gclRect{
+    gclPoint pt0, pt1, pt2, pt3;
+    gclVector norVector;
+    void Rotate(double *matrix)
+    {
+        pt0.Rotate(matrix);
+        pt1.Rotate(matrix);
+        pt2.Rotate(matrix);
+        pt3.Rotate(matrix);
+        norVector.Rotate(matrix);
     }
 };
 struct minpackData{

@@ -12,7 +12,9 @@
 #include <iostream>
 #include "geom.h"
 #include <fstream>
+#include <opencv2/opencv.hpp>
 
 using namespace std;
+using namespace cv;
 
 #endif /* defined(__GCL__testFile__) */

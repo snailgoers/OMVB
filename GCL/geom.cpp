@@ -319,7 +319,86 @@ double geom_dist_point_elipse(gclElipse elipse, gclPoint point)
     delete []matrix;
     return sqrt(distHorirantol * distHorirantol + distVertical * distVertical);
 }
-
+double geom_dist_point_rectHorirantol(gclRect rect, gclPoint point)
+{
+    double dist;
+    gclVector v1(rect.pt0, rect.pt1);
+    gclVector v01(rect.pt0, point);
+    v01.vCrossMult(v1);
+    bool flag1 = v01.c < 0; // 1:线的左侧 0:线的右侧
+    
+    gclVector v2(rect.pt1, rect.pt2);
+    gclVector v02(rect.pt1, point);
+    v02.vCrossMult(v2);
+    bool flag2 = v02.c < 0;
+    
+    gclVector v3(rect.pt2, rect.pt3);
+    gclVector v03(rect.pt2, point);
+    v03.vCrossMult(v3);
+    bool flag3 = v03.c < 0;
+    
+    
+    gclVector v4(rect.pt3, rect.pt0);
+    gclVector v04(rect.pt3, point);
+    v04.vCrossMult(v4);
+    bool flag4 = v04.c < 0;
+    
+    gclLseg lseg1(rect.pt0, rect.pt1);
+    gclLseg lseg2(rect.pt1, rect.pt2);
+    gclLseg lseg3(rect.pt2, rect.pt3);
+    gclLseg lseg4(rect.pt3, rect.pt0);
+    double dist1 = geom_dist_point_lseg(point, lseg1);
+    double dist2 = geom_dist_point_lseg(point, lseg2);
+    double dist3 = geom_dist_point_lseg(point, lseg3);
+    double dist4 = geom_dist_point_lseg(point, lseg4);
+    
+    if (flag1 & flag4) {
+        dist = geom_dist_point_point(rect.pt0, point);
+    }
+    else if (flag1 & !flag4 & !flag2)
+    {
+        dist = dist1;
+    }
+    else if (!flag1 & !flag3 & flag2)
+    {
+        dist = dist2;
+    }
+    else if (!flag2 & flag3 & !flag4)
+    {
+        dist = dist3;
+    }
+    else if (flag4 & flag3 & !flag1)
+    {
+        dist = dist4;
+    }
+    else
+    {
+        dist = gclMin(dist1, gclMin(dist2, gclMin(dist3, dist4)));
+    }
+    return dist;
+    
+}
+double geom_dist_point_rect(gclRect rect, gclPoint point)
+{
+    gclPlane plane;
+    plane.norVector = rect.norVector;
+    plane.point = rect.pt0;
+    double distHorirantal = geom_dist_point_plane(plane, point);
+    
+    gclVector src = rect.norVector;
+    src.vNorm();
+    gclVector dst(0, 0, 1);
+    double *matrix = new double[9];
+    GetRotateMatrix(src, dst, matrix);
+    
+    point.Rotate(matrix);
+    rect.Rotate(matrix);
+    double distVertical = geom_dist_point_rectHorirantol(rect, point);
+    
+    delete []matrix;
+    return sqrt(distVertical * distVertical + distHorirantal * distHorirantal);
+    
+}
 /// geom fitting
 
 // plane fitting
@@ -421,7 +500,7 @@ bool geom_fit_plane(gclPlane &plane, gclPoint *points, int len)
     gclVector v2(points[index0], points[index2]);
     plane.norVector = v1.vCrossMult(v2);
     plane.norVector.vNorm();
-    if (plane.norVector.c > EPS) {
+    if (plane.norVector.c > EPSMIN) {
         geom_fit_plane_nonVertical(plane, points, len);
         return true;
     }
