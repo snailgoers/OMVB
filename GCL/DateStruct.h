@@ -28,6 +28,7 @@ using namespace std;
 #define gclMin(a, b) ((a) < (b) ? (a) : (b))
 #define gclMax(a, b) ((a) > (b) ? (a) : (b))
 
+
 struct gclPoint
 {
     double x, y, z;
