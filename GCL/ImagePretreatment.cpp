@@ -237,7 +237,6 @@ bool ImAverageFilter(uchar *imgIn, uchar *imgOut, int width, int height, int nch
 }
 /// 对比度增强
 bool ImAdjust(uchar *imgIn, uchar *imgOut, int width, int height, int nchannels,
-              
               double low_in, double high_in, double low_out, double high_out, double gamma)
 {
     if (imgIn == NULL || !(nchannels == 1 || nchannels == 3) || low_in < 0 || low_in > 1 ||

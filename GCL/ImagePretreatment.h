@@ -14,4 +14,10 @@
 
 typedef unsigned char uchar;
 
+bool ImAverageFilter(uchar *imgIn, uchar *imgOut, int width, int height, int nchannels, int size);
+bool ImAdjust(uchar *imgIn, uchar *imgOut, int width, int height, int nchannels,
+              double low_in, double high_in, double low_out, double high_out, double gamma);
+bool ImSharpening(uchar *imgIn, uchar *imgOut, int widht, int height, int nchannels);
+bool ImColorMap(uchar *imgIn, uchar *imgOut, int widht, int height, int nchannels, double low, double high, int level);
+
 #endif /* defined(__GCL__ImagePretreatment__) */
