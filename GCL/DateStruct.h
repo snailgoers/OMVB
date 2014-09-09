@@ -145,15 +145,15 @@ struct gclSphere{
     }
 };
 struct gclRect{
-    gclPoint pt0, pt1, pt2, pt3;
+    gclPoint center;
     gclVector norVector;
+    gclVector mainVector;
+    double width, height;
     void Rotate(double *matrix)
     {
-        pt0.Rotate(matrix);
-        pt1.Rotate(matrix);
-        pt2.Rotate(matrix);
-        pt3.Rotate(matrix);
+        center.Rotate(matrix);
         norVector.Rotate(matrix);
+        mainVector.Rotate(matrix);
     }
 };
 struct minpackData{

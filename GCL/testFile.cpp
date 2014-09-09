@@ -19,9 +19,9 @@ int main(void)
     
     
     // read the data
-    int len = 1296;
+    int len = 284;
     gclPoint *points = new gclPoint[len];
-    ifstream file("../../../GCL/testdata/sphereFit.txt");
+    ifstream file("../../../GCL/testdata/rect3Dfitting284.txt");
     for (int i = 0; i < len; i++) {
         file >> points[i].x >> points[i].y  >> points[i].z;
     }
@@ -45,9 +45,15 @@ int main(void)
     
     // test for sphere fitting
     // true value:center =[-10, 5, 20],R = 30;
-    gclSphere sphere;
-    if (geom_fit_sphere(sphere, points, len)) {
-        printf("%f %f %f\n%f\n", sphere.center.x, sphere.center.y, sphere.center.z, sphere.r);
+//    gclSphere sphere;
+//    if (geom_fit_sphere(sphere, points, len)) {
+//        printf("%f %f %f\n%f\n", sphere.center.x, sphere.center.y, sphere.center.z, sphere.r);
+//    }
+    // test for rect fitting
+    // true value center=[1.5470, 21.5470, -23.0940] width = 50 height = 20 nor=[1 1 1]
+    gclRect rect;
+    if (geom_fit_rect(rect, points, len)) {
+        printf("%f %f %f\n%f %f %f\n%f %f %f\n%f %f", rect.center.x, rect.center.y, rect.center.z, rect.norVector.a, rect.norVector.b, rect.norVector.c, rect.mainVector.a, rect.mainVector.b, rect.mainVector.c, rect.width, rect.height);
     }
     
     

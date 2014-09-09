@@ -321,51 +321,83 @@ double geom_dist_point_elipse(gclElipse elipse, gclPoint point)
 }
 double geom_dist_point_rectHorirantol(gclRect rect, gclPoint point)
 {
+    // 由center确定四点坐标
+    gclPoint pt0(rect.center.x - rect.width / 2, rect.center.y - rect.height / 2, 0);
+    gclPoint pt1(rect.center.x + rect.width / 2, rect.center.y - rect.height / 2, 0);
+    gclPoint pt2(rect.center.x + rect.width / 2, rect.center.y + rect.height / 2, 0);
+    gclPoint pt3(rect.center.x - rect.width / 2, rect.center.y + rect.height / 2, 0);
+    
+    // rotate to main direction
+    double theta = acos(rect.mainVector.b / rect.mainVector.a);
+    double cost = cos(theta);
+    double sint = sin(theta);
+    pt0.x =cost * pt0.x + sint * pt0.y;
+    pt0.y = -sint * pt0.x + cost * pt0.y;
+    pt1.x = cost * pt1.x + sint * pt1.y;
+    pt1.y = -sint * pt1.x + cost * pt1.y;
+    pt2.x =cost * pt2.x + sint * pt2.y;
+    pt2.y = -sint * pt2.x + cost * pt2.y;
+    pt3.x = cost * pt3.x + sint * pt3.y;
+    pt3.y = -sint * pt3.x + cost * pt3.y;
+
+    
     double dist;
-    gclVector v1(rect.pt0, rect.pt1);
-    gclVector v01(rect.pt0, point);
+    gclVector v1(pt0, pt1);
+    gclVector v01(pt0, point);
     v01.vCrossMult(v1);
     bool flag1 = v01.c < 0; // 1:线的左侧 0:线的右侧
     
-    gclVector v2(rect.pt1, rect.pt2);
-    gclVector v02(rect.pt1, point);
+    gclVector v2(pt1, pt2);
+    gclVector v02(pt1, point);
     v02.vCrossMult(v2);
     bool flag2 = v02.c < 0;
     
-    gclVector v3(rect.pt2, rect.pt3);
-    gclVector v03(rect.pt2, point);
+    gclVector v3(pt2, pt3);
+    gclVector v03(pt2, point);
     v03.vCrossMult(v3);
     bool flag3 = v03.c < 0;
     
     
-    gclVector v4(rect.pt3, rect.pt0);
-    gclVector v04(rect.pt3, point);
+    gclVector v4(pt3, pt0);
+    gclVector v04(pt3, point);
     v04.vCrossMult(v4);
     bool flag4 = v04.c < 0;
     
-    gclLseg lseg1(rect.pt0, rect.pt1);
-    gclLseg lseg2(rect.pt1, rect.pt2);
-    gclLseg lseg3(rect.pt2, rect.pt3);
-    gclLseg lseg4(rect.pt3, rect.pt0);
+    gclLseg lseg1(pt0, pt1);
+    gclLseg lseg2(pt1, pt2);
+    gclLseg lseg3(pt2, pt3);
+    gclLseg lseg4(pt3, pt0);
     double dist1 = geom_dist_point_lseg(point, lseg1);
     double dist2 = geom_dist_point_lseg(point, lseg2);
     double dist3 = geom_dist_point_lseg(point, lseg3);
     double dist4 = geom_dist_point_lseg(point, lseg4);
     
     if (flag1 & flag4) {
-        dist = geom_dist_point_point(rect.pt0, point);
+        dist = geom_dist_point_point(pt0, point);
     }
     else if (flag1 & !flag4 & !flag2)
     {
         dist = dist1;
     }
+    else if (flag1 & flag2)
+    {
+        dist = geom_dist_point_point(pt1, point);
+    }
     else if (!flag1 & !flag3 & flag2)
     {
         dist = dist2;
     }
+    else if (flag2 & flag3)
+    {
+        dist = geom_dist_point_point(pt2, point);
+    }
     else if (!flag2 & flag3 & !flag4)
     {
         dist = dist3;
+    }
+    else if (flag3 & flag4)
+    {
+        dist = geom_dist_point_point(pt3, point);
     }
     else if (flag4 & flag3 & !flag1)
     {
@@ -382,7 +414,7 @@ double geom_dist_point_rect(gclRect rect, gclPoint point)
 {
     gclPlane plane;
     plane.norVector = rect.norVector;
-    plane.point = rect.pt0;
+    plane.point = rect.center;
     double distHorirantal = geom_dist_point_plane(plane, point);
     
     gclVector src = rect.norVector;
@@ -852,6 +884,158 @@ bool geom_fit_sphere(gclSphere &sphere, gclPoint *points, int len)
     
     return true;
 }
+
+// rect fitting
+int Minpack_CostFun_Rect(void *pspo, int m, int n, const __cminpack_real__ *x, __cminpack_real__ *fvec, int iflag)
+{
+    const gclPoint *points = ((minpackData *)pspo)->points;
+    int len = ((minpackData *)pspo)->len;
+    
+    gclRect rect;
+    rect.center.x = x[0];
+    rect.center.y = x[1];
+    rect.center.z = x[2];
+    rect.norVector.a = x[3];
+    rect.norVector.b = x[4];
+    rect.norVector.c = x[5];
+    rect.mainVector.a = x[6];
+    rect.mainVector.b = x[7];
+    rect.mainVector.c = x[8];
+    rect.width = x[9];
+    rect.height = x[10];
+    for (int i = 0; i < len; i++) {
+        fvec[i] = geom_dist_point_rect(rect, points[i]);
+    }
+    return 0;
+}
+bool geom_fit_rect(gclRect &rect, gclPoint *points, int len)
+{
+    if (points == NULL || len < 11) {
+        return false;
+    }
+    // init the rect
+    gclPlane plane;
+    geom_fit_plane(plane, points, len);
+    plane.norVector.vNorm();
+    rect.norVector = plane.norVector;
+    gclPoint ptcenter;
+    for (int i = 0; i < len; i++) {
+        ptcenter.x += points[i].x;
+        ptcenter.y += points[i].y;
+        ptcenter.z += points[i].z;
+    }
+    ptcenter.x /= len; ptcenter.y /= len; ptcenter.z /= len;
+    rect.center = ptcenter;
+    
+    double maxdis = -DBL_MAX;
+    double mindis = DBL_MAX;
+    int minDex, maxDex;
+    for (int i = 0; i < len; i++) {
+        double dis = (ptcenter.x - points[i].x) * (ptcenter.x - points[i].x) + (ptcenter.y - points[i].y) * (ptcenter.y - points[i].y) + (ptcenter.z - points[i].z) * (ptcenter.z - points[i].z);
+        if (dis > maxdis) {
+            maxdis = dis;
+            maxDex = i;
+        }
+        if (dis < mindis) {
+            mindis = dis;
+            minDex = i;
+        }
+    }
+    double b = sqrt(maxdis - mindis);
+    gclVector v1(points[minDex], points[maxDex]);
+    v1.vNorm();
+    gclVector v2(ptcenter, points[minDex]);
+    v2.vNorm();
+    if (sqrt(mindis) > b) {
+        rect.mainVector =  v2;
+        rect.width = 2 * sqrt(mindis);
+        rect.height = 2 * b;
+    }
+    else
+    {
+        rect.mainVector = v1;
+        rect.width = 2 * b;
+        rect.height = 2 * sqrt(mindis);
+    }
+    
+    int m = len;
+    int n = 11; // number of unknown
+    double *fvec = new double[m];
+    double *x = new double[n];
+    double *fjac = new double[m * n];
+    double *wa4 = new double[m];
+    double *diag = new double[n];
+    double *qtf = new double[n];
+    double *wa1 = new double[n];
+    double *wa2 = new double[n];
+    double *wa3 = new double[n];
+    int *ipvt = new int[n];
+    double ftol = FTOL;
+    double xtol = XTOL;
+    double gtol = GTOL;
+    int maxfev = MAXFEV * n;
+    double epsfcn = EPSFCN;
+    int mode = MODE;
+    double factor = FACTOR;
+    int nprint = 0;
+    int info = 0;
+    int nfev;
+    int ldfjac = m;
+    
+    // init unknown
+    
+    minpackData data;
+    data.len = len;
+    data.points = points;
+    
+    x[0] = rect.center.x;
+    x[1] = rect.center.y;
+    x[2] = rect.center.z;
+    x[3] = rect.norVector.a;
+    x[4] = rect.norVector.b;
+    x[5] = rect.norVector.c;
+    x[6] = rect.mainVector.a;
+    x[7] = rect.mainVector.b;
+    x[8] = rect.mainVector.c;
+    x[9] = rect.width;
+    x[10] = rect.height;
+    
+    
+    info = __cminpack_func__(lmdif)(Minpack_CostFun_Rect, &data, m, n, x, fvec, ftol, xtol, gtol, maxfev, epsfcn, diag, mode, factor, nprint, &nfev, fjac, ldfjac, ipvt, qtf, wa1, wa2, wa3, wa4);
+    
+    rect.center.x = x[0];
+    rect.center.y = x[1];
+    rect.center.z = x[2];
+    rect.norVector.a = x[3];
+    rect.norVector.b = x[4];
+    rect.norVector.c = x[5];
+    rect.mainVector.a = x[6];
+    rect.mainVector.b = x[7];
+    rect.mainVector.c = x[8];
+    rect.width = x[9];
+    rect.height = x[10];
+    
+    delete[] fvec;
+    delete []x;
+    delete []fjac;
+    delete []diag;
+    delete []ipvt;
+    delete []qtf;
+    delete []wa1;
+    delete []wa2;
+    delete []wa3;
+    delete []wa4;
+    return true;
+}
+
+
+
+
+
+
+
+
+
 
 
 
